@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: ["completed"]
+    branches: [master]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      # The runner's Node 22 bundles npm 10, which rejects a lockfile written by npm 11 (nested optional
+      # entries such as utf-8-validate get pruned). Pin the npm the lockfile is maintained with.
+      - run: npm i -g npm@11.13.0
+      - run: npm ci
+      - run: npm run build
+      # Belt and braces: the job already runs only after the CI workflow succeeded, but publish from
+      # nothing that did not just pass typecheck and the tests in this very checkout.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Set up Git author
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Get current version
+        id: before
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Run release-it
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run release -- --ci || true
+
+      - name: Check if released
+        id: release
+        run: |
+          AFTER=$(node -p "require('./package.json').version")
+          if [ "${{ steps.before.outputs.version }}" != "$AFTER" ]; then
+            echo "Released v$AFTER"
+            echo "released=true" >> $GITHUB_OUTPUT
+          else
+            echo "No new version to release"
+            echo "released=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npm
+        if: steps.release.outputs.released == 'true'
+        # npm 12.0.0 fails `publish --provenance` with MODULE_NOT_FOUND for 'sigstore'
+        # (packaging regression: the tarball no longer bundles it where libnpmpublish can
+        # resolve it). Pin to npm 11 (trusted publishing needs >= 11.5.1) until npm 12 is fixed.
+        run: npx --yes npm@11 publish --access public --provenance
