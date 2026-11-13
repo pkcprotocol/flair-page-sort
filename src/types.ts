@@ -1,5 +1,6 @@
 // Re-exports of the pkc-js page sort types, so the package compiles against the contract the community
-// actually runs (docs/protocol/page-sorts.md in pkc-js). Named root exports of pkc-js since 0.0.110.
+// actually runs (docs/protocol/page-sorts.md in pkc-js). Named root exports of pkc-js since 0.0.110;
+// the entry's own `sortName` since 0.0.143.
 import type {
   CommunityPageSortSetting,
   PageSortFile,

@@ -8,7 +8,6 @@ import flairPageSort, {
   FLAIRS_OPTION,
   LAYOUT_OPTION,
   ORDER_OPTION,
-  SORT_NAME_OPTION,
   flairScore,
   flairTexts,
   resetSortData,
@@ -36,11 +35,12 @@ const score = (options: Record<string, string>, args: ReturnType<typeof scored>,
 beforeEach(resetSortData);
 
 describe("the file", () => {
-  it("passes pkc-js's own validation and publishes under the key it is given", () => {
+  it("passes pkc-js's own validation and declares flaired as its key, whatever the entry says", () => {
     expect(() => validatePageSortFileFactory(flairPageSort, { name: "@pkcprotocol/flair-page-sort" })).not.toThrow();
     expect(sortOf({})).toMatchObject({ sortName: DEFAULT_SORT_NAME, flat: false, requireReplies: true });
-    expect(sortOf({ [SORT_NAME_OPTION]: "hot" }).sortName).toBe("hot");
-    expect(sortOf({ [SORT_NAME_OPTION]: " flaired-tree " }).sortName).toBe("flaired-tree");
+    // The entry's sortName is the owner's and pkc-js resolves it; the file's own key stays the default
+    expect(flairPageSort({ pageSortSettings: { ...buildSettings({ [FLAIRS_OPTION]: FLAIRS }), sortName: "hot" } }).sortName).toBe(DEFAULT_SORT_NAME);
+    expect(sortOf({}).optionInputs?.map((input) => input.option)).not.toContain("sortName");
   });
 
   it("is a flat page without the replies when told so, and still needs them to count for hot", () => {
@@ -61,11 +61,7 @@ describe("validation", () => {
     expect(validate({ [FLAIRS_OPTION]: "x".repeat(129) })).toThrow(/maximum is 128/);
   });
 
-  it("rejects a key, order, layout or weight that can't work", () => {
-    expect(validate({ [FLAIRS_OPTION]: MODS, [SORT_NAME_OPTION]: "" })).toThrow(/sortName/);
-    expect(validate({ [FLAIRS_OPTION]: MODS, [SORT_NAME_OPTION]: "two words" })).toThrow(/sortName/);
-    expect(validate({ [FLAIRS_OPTION]: MODS, [SORT_NAME_OPTION]: "__proto__" })).toThrow(/sortName/);
-    expect(validate({ [FLAIRS_OPTION]: MODS, [SORT_NAME_OPTION]: "hot" })).not.toThrow();
+  it("rejects an order, layout or weight that can't work", () => {
     expect(validate({ [FLAIRS_OPTION]: MODS, [ORDER_OPTION]: "busiest" })).toThrow(/order/);
     expect(validate({ [FLAIRS_OPTION]: MODS, [LAYOUT_OPTION]: "nested" })).toThrow(/layout/);
     expect(validate({ [FLAIRS_OPTION]: MODS, nativeWeight: "x" })).toThrow(/nativeWeight/);
