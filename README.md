@@ -134,16 +134,15 @@ community.pageSorts = {
             name: "@pkcprotocol/flair-page-sort", // absent for a path entry
             description: "Only the comments that carry one of the configured flairs, or (posts, and replies on a tree page) have one under them; ...",
             publicOptions: {
-                flairs: "Removed by mods on Reddit,Removed by Reddit admins",
-                order: "hot",
-                layout: "tree",
-                nativeWeight: "1",
                 pinnedFirst: "true",
                 excludeRemovedComments: "true",
                 excludeDeletedComments: "true",
                 excludeCommentPendingApproval: "true",
                 excludeCommentWithApprovedFalse: "true",
-                excludeCommentsWithDifferentCommunityAddress: "true"
+                order: "hot",
+                layout: "tree",
+                nativeWeight: "1",
+                flairs: "Removed by mods on Reddit,Removed by Reddit admins"
             }
         }
     }
