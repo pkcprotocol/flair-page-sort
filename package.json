@@ -1,6 +1,6 @@
 {
   "name": "@pkcprotocol/flair-page-sort",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Flair filter page sort for pkc-js communities: pages that hold only the posts or replies carrying a configured flair, or with one under them, in flaired, new, hot or best order",
   "type": "module",
   "main": "./dist/index.js",

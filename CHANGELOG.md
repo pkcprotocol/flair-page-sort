@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/pkcprotocol/flair-page-sort/compare/v0.0.2...v0.0.3) (2026-11-13)
+
+### Bug Fixes
+
+* **release:** publish whenever the current version is missing from npm ([b29e784](https://github.com/pkcprotocol/flair-page-sort/commit/b29e7843a920b20564bf3fdb8d1fe7c3309856bc))
+* **release:** treat only a 404 as a missing version, and say what a re-run retries ([687f4e5](https://github.com/pkcprotocol/flair-page-sort/commit/687f4e5a544b3c914a70c36b3c48faa7e27b3da3))
+
 ## [0.0.2](https://github.com/pkcprotocol/flair-page-sort/compare/v0.0.1...v0.0.2) (2026-11-13)
 
 ### Features
