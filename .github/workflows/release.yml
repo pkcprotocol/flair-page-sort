@@ -61,8 +61,23 @@ jobs:
             echo "released=false" >> $GITHUB_OUTPUT
           fi
 
+      # Publish whenever the version in package.json is missing from npm, not only when this run bumped it:
+      # a publish that failed leaves a tagged, unpublished version, and re-running the job has to be able
+      # to publish it.
+      - name: Check if this version is on npm
+        id: npm
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@pkcprotocol/flair-page-sort@$VERSION" version >/dev/null 2>&1; then
+            echo "v$VERSION is already on npm"
+            echo "missing=false" >> $GITHUB_OUTPUT
+          else
+            echo "v$VERSION is not on npm, publishing"
+            echo "missing=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to npm
-        if: steps.release.outputs.released == 'true'
+        if: steps.npm.outputs.missing == 'true'
         # npm 12.0.0 fails `publish --provenance` with MODULE_NOT_FOUND for 'sigstore'
         # (packaging regression: the tarball no longer bundles it where libnpmpublish can
         # resolve it). Pin to npm 11 (trusted publishing needs >= 11.5.1) until npm 12 is fixed.

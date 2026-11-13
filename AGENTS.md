@@ -47,6 +47,9 @@ Releasing:
   version from the conventional-commit types, tags it, cuts a GitHub release, and publishes to npm with provenance.
 - Publishing authenticates with npm trusted publishing (OIDC), not a token. `release.yml` needs `id-token: write` and
   pins the npm CLI to `npm@11`.
-- A trusted publisher is configured under npm's package settings, so the package has to exist first. The first
-  version is published by hand and has no provenance attestation. Every version after it is signed by CI. Never
-  publish by hand once the trusted publisher is configured.
+- The trusted publisher is configured on npm for `pkcprotocol/flair-page-sort`, workflow `release.yml`, no
+  environment, with `npm publish` allowed. 0.0.2 was the first version on npm, published by hand, and has no
+  provenance attestation; every version after it is published and signed by CI. Never publish by hand.
+- The publish step runs whenever the version in `package.json` is missing from npm, so a failed publish is retried by
+  re-running the Release job. Renaming `release.yml` or adding an `environment` to the job breaks the trust: the
+  publisher on npm has to be deleted and recreated to match.
