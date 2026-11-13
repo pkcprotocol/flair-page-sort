@@ -62,19 +62,27 @@ jobs:
           fi
 
       # Publish whenever the version in package.json is missing from npm, not only when this run bumped it:
-      # a publish that failed leaves a tagged, unpublished version, and re-running the job has to be able
-      # to publish it.
+      # a publish that failed leaves a tagged, unpublished version, and re-running the job publishes it as
+      # long as master is still at that version. Once a later version is out, the failed one is skipped for
+      # good: the checkout is master, and the later version already carries its changes.
+      # Only a 404 means missing. Any other failure of the lookup (timeout, 5xx, rate limit) fails the job
+      # here, instead of attempting to publish over a version that is already on npm.
       - name: Check if this version is on npm
         id: npm
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          if npm view "@pkcprotocol/flair-page-sort@$VERSION" version >/dev/null 2>&1; then
+          if npm view "@pkcprotocol/flair-page-sort@$VERSION" version > /dev/null 2> npm-view.err; then
             echo "v$VERSION is already on npm"
             echo "missing=false" >> $GITHUB_OUTPUT
-          else
+          elif grep -q E404 npm-view.err; then
             echo "v$VERSION is not on npm, publishing"
             echo "missing=true" >> $GITHUB_OUTPUT
+          else
+            echo "Could not ask npm whether v$VERSION is published:"
+            cat npm-view.err
+            exit 1
           fi
+          rm -f npm-view.err
 
       - name: Publish to npm
         if: steps.npm.outputs.missing == 'true'
