@@ -11,6 +11,8 @@ Workflow:
 
 - Before every commit, run `npm run typecheck`, `npm run build` and `npm test`, and see them pass. CI runs the same.
 - Temporary files go under `.tmp/` in the repository, never `/tmp`.
+- Never push to `master`. Every change goes on a branch and through a pull request, so it can be reviewed before it
+  merges. A merge to `master` is a release (see Releasing), which is one more reason nothing lands there unreviewed.
 
 Conventions specific to this package:
 
@@ -41,7 +43,7 @@ Conventions specific to this package:
 
 Releasing:
 
-- Releases are automatic. A push to `master` runs CI, and on success `release.yml` runs release-it, which bumps the
+- Releases are automatic. A merge to `master` runs CI, and on success `release.yml` runs release-it, which bumps the
   version from the conventional-commit types, tags it, cuts a GitHub release, and publishes to npm with provenance.
 - Publishing authenticates with npm trusted publishing (OIDC), not a token. `release.yml` needs `id-token: write` and
   pins the npm CLI to `npm@11`.
