@@ -51,5 +51,6 @@ Releasing:
   environment, with `npm publish` allowed. 0.0.2 was the first version on npm, published by hand, and has no
   provenance attestation; every version after it is published and signed by CI. Never publish by hand.
 - The publish step runs whenever the version in `package.json` is missing from npm, so a failed publish is retried by
-  re-running the Release job. Renaming `release.yml` or adding an `environment` to the job breaks the trust: the
+  re-running the Release job, as long as `master` is still at that version. Once a later version is published the
+  failed one is never published; the later one carries its changes. Renaming `release.yml` or adding an `environment` to the job breaks the trust: the
   publisher on npm has to be deleted and recreated to match.
