@@ -15,10 +15,11 @@ Workflow:
 Conventions specific to this package:
 
 - `README.md` is the spec. Behaviour changes belong there first.
-- One file, listed once per page: the wire key comes from the `sortName` option (default `flaired`), so a community
+- One file, listed once per page: the file returns the constant key `flaired`, and the `settings.pages` entry sets
+  its own `sortName` (pkc-js's field, resolved ahead of the file's; never an option of this package), so a community
   can publish the filter under several keys (`hot` to make clients open on it) with different `order` and `layout`.
   pkc-js rejects two entries resolving to the same key.
-- The option names (`flairs`, `sortName`, `order`, `layout`, `sortDataPath`, `nativeWeight`) are the wire contract:
+- The option names (`flairs`, `order`, `layout`, `sortDataPath`, `nativeWeight`) are the wire contract:
   UIs read `flairs` off `community.pageSorts.<scope>.<key>.publicOptions` to mark the comments the page is about,
   and most never install this package. A rename is a new contract, never an edit.
 - `flairs` is required. An entry without one could never put anything on the page, so it is rejected rather than

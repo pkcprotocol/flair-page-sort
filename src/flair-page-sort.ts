@@ -3,13 +3,12 @@ import type { FlairCommentLike, PageSortFile, PageSortFileFactory, PageSortFileF
 
 /** Comma-separated flair texts; a comment needs one of them (or, on a tree page, one under it) to be on the page. Required. */
 export const FLAIRS_OPTION = "flairs";
-/** The wire key the page publishes under, default `flaired`. A community lists the sort once per key it wants. */
-export const SORT_NAME_OPTION = "sortName";
 /** `flaired` (most recently flaired first), `new`, `hot` (most replies present first) or `best` (score plus votes). */
 export const ORDER_OPTION = "order";
 /** Reply pages: `tree` keeps a reply when it or any reply under it is flaired; `flat` lists only the flaired replies, one level. */
 export const LAYOUT_OPTION = "layout";
 
+/** The key the page publishes under unless the `settings.pages` entry sets its own `sortName`. */
 export const DEFAULT_SORT_NAME = "flaired";
 export const ORDERS = ["flaired", "new", "hot", "best"] as const;
 export const LAYOUTS = ["tree", "flat"] as const;
@@ -20,7 +19,6 @@ export const DEFAULT_LAYOUT: Layout = "tree";
 
 export const MAX_FLAIRS = 64;
 export const MAX_FLAIR_LENGTH = 128;
-export const MAX_SORT_NAME_LENGTH = 64;
 
 export const DESCRIPTION =
   "Only the comments that carry one of the configured flairs, or (posts, and replies on a tree page) have one under them; most recently flaired first, newest first, most replies first, or best first";
@@ -31,12 +29,6 @@ export const optionInputs: NonNullable<PageSortFile["optionInputs"]> = [
     label: "Flairs",
     description: "Comma-separated flair texts. A comment needs one of them, on itself or (posts, tree pages) on a comment under it, to be on the page. Exact, trimmed.",
     placeholder: "Removed by mods"
-  },
-  {
-    option: SORT_NAME_OPTION,
-    label: "Wire key",
-    description: `The key this page is published under, "${DEFAULT_SORT_NAME}" by default. Publish it as "hot" to make clients open on it.`,
-    placeholder: DEFAULT_SORT_NAME
   },
   {
     option: ORDER_OPTION,
@@ -79,7 +71,6 @@ const layoutOf = (options: Record<string, string> | undefined): Layout => {
   const layout = options?.[LAYOUT_OPTION];
   return (LAYOUTS as readonly string[]).includes(layout ?? "") ? (layout as Layout) : DEFAULT_LAYOUT;
 };
-const sortNameOf = (options: Record<string, string> | undefined): string => options?.[SORT_NAME_OPTION]?.trim() || DEFAULT_SORT_NAME;
 
 /** The flair texts on a comment: a moderator's flairs (CommentUpdate) override the author's (Comment), as pkc-js documents. */
 export const flairTexts = ({ comment, commentUpdate }: FlairCommentLike): string[] =>
@@ -101,13 +92,6 @@ export const validatePageSortSettings = ({ pageSortSettings }: { pageSortSetting
   if (flairs.length > MAX_FLAIRS) throw new Error(`${FLAIRS_OPTION} lists ${flairs.length} flairs, the maximum is ${MAX_FLAIRS}`);
   for (const flair of flairs)
     if (flair.length > MAX_FLAIR_LENGTH) throw new Error(`${FLAIRS_OPTION} flair "${flair.slice(0, 16)}..." is ${flair.length} chars, the maximum is ${MAX_FLAIR_LENGTH}`);
-  const sortName = options[SORT_NAME_OPTION];
-  if (sortName !== undefined) {
-    const trimmed = sortName.trim();
-    if (!trimmed || /\s/.test(trimmed)) throw new Error(`${SORT_NAME_OPTION} must be a key without spaces, got "${sortName.slice(0, 32)}"`);
-    if (trimmed.length > MAX_SORT_NAME_LENGTH) throw new Error(`${SORT_NAME_OPTION} is ${trimmed.length} chars, the maximum is ${MAX_SORT_NAME_LENGTH}`);
-    if (["__proto__", "constructor", "prototype"].includes(trimmed)) throw new Error(`${SORT_NAME_OPTION} "${trimmed}" is not allowed as a key`);
-  }
   const order = options[ORDER_OPTION];
   if (order !== undefined && !sameOrdinal(ORDERS, order)) throw new Error(`${ORDER_OPTION} must be one of ${ORDERS.join(", ")}, got "${order.slice(0, 32)}"`);
   const layout = options[LAYOUT_OPTION];
@@ -151,7 +135,8 @@ export function flairScore(data: SortDataMap, { comment, commentUpdate, options,
 
 /**
  * The page sort file factory. pkc-js calls it once per community start and per settings edit with the entry, and
- * caches the result. List it under `posts` or `replies`, once per page wanted, with a distinct `sortName` each.
+ * caches the result. List it under `posts` or `replies`, once per page wanted; an entry listed next to another sets
+ * its own `sortName`, which pkc-js resolves ahead of the default returned here.
  */
 export const flairPageSort: PageSortFileFactory = ({ pageSortSettings }: PageSortFileFactoryArgs): PageSortFile => {
   const options = pageSortSettings.options;
@@ -159,7 +144,7 @@ export const flairPageSort: PageSortFileFactory = ({ pageSortSettings }: PageSor
   const layout = layoutOf(options);
   const order = orderOf(options);
   return {
-    sortName: sortNameOf(options),
+    sortName: DEFAULT_SORT_NAME,
     description: DESCRIPTION,
     // A flat page keeps only the flaired comments themselves and needs the replies only to count them
     flat: layout === "flat",
